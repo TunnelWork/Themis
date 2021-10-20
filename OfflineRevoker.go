@@ -41,7 +41,7 @@ func NewOfflineRevoker() *OfflineRevoker {
 	}
 }
 
-func (orev *OfflineRevoker) Register(uid uint32, params ...interface{}) (uint32, error) {
+func (orev *OfflineRevoker) Register(uid uint32, params ...interface{}) (uint32, error) { // skipcq: GSC-G404
 	orev.sgl.Lock()
 	defer orev.sgl.Unlock()
 	var rid uint32
@@ -64,12 +64,12 @@ func (orev *OfflineRevoker) Register(uid uint32, params ...interface{}) (uint32,
 		return 0, ErrOfflineRevokerNotEnoughParams
 	}
 
+	rid = rand.Uint32()
+
 	// Check if user's map exists
 	if umap, exist := orev.registry[uid]; exist {
 		umap.lock.Lock()
 		defer umap.lock.Unlock()
-		// Randomly
-		rid = rand.Uint32()
 		umap.rrMap[rid] = orr
 	} else {
 		// Otherwise need to create a user map
@@ -79,8 +79,6 @@ func (orev *OfflineRevoker) Register(uid uint32, params ...interface{}) (uint32,
 		}
 		orev.registry[uid].lock.Lock()
 		defer orev.registry[uid].lock.Unlock()
-		// Randomly
-		rid = rand.Uint32()
 		orev.registry[uid].rrMap[rid] = orr
 	}
 

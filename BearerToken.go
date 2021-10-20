@@ -84,10 +84,7 @@ func (b *BearerToken) Verify(pubkey interface{}) error {
 		return sigVerifyErr
 	}
 
-	if revErr := b.revoker.Validate(b.body.Identity, b.body.RevocationID); revErr != nil {
-		return revErr
-	}
-	return nil
+	return b.revoker.Validate(b.body.Identity, b.body.RevocationID)
 }
 
 // Renew() only updates the body. sig/fullToken must be manually updated by
