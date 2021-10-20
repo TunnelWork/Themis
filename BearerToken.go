@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	harpocrates "github.com/TunnelWork/Harpocrates"
 	"github.com/golang-jwt/jwt"
 )
 
@@ -22,8 +23,10 @@ var (
 	ErrIllformedBearerToken error = errors.New("themis: token is illformed")
 	ErrBearerAuthBodyUninit error = errors.New("themis: bearer token auth body is not initialized")
 	ErrBearerAuthSigUninit  error = errors.New("themis: bearer token auth signature is not initialized")
-	ErrBearerKeyTypeUnmatch error = errors.New("themis: bearer token requires ed25519 key")
 	ErrBearerTokenExpired   error = errors.New("themis: bearer token expired")
+
+	ErrBearerBadSigningKey   error = errors.New("themis: BearerToken.Sign() expects a seed string or an ed25519.PrivateKey as input")
+	ErrBearerBadVerifyingKey error = errors.New("themis: BearerToken.Verify() expects a seed string or an ed25519.PublicKey as input")
 )
 
 type BearerToken struct {
@@ -35,11 +38,18 @@ type BearerToken struct {
 
 /****** Start Interface Implementation ******/
 
-// Sign() fill the signature as signed by ed25519 key after any updates being made to body
+// Sign() fill the signature after any updates being made to body
 // if returns error, token will be left `unsigned`
-func (b *BearerToken) Sign(privkey interface{}) error {
-	if _, ok := privkey.(ed25519.PrivateKey); !ok {
-		return ErrBearerKeyTypeUnmatch
+// factor could be either a seed string or an ed25519.PrivateKey
+func (b *BearerToken) Sign(factor interface{}) error {
+	var privkey ed25519.PrivateKey
+
+	if seed, ok := factor.(string); ok {
+		privkey = harpocrates.Ed25519Key(seed)
+	} else if pkey, ok := factor.(ed25519.PrivateKey); ok {
+		privkey = pkey
+	} else {
+		return ErrBearerBadSigningKey
 	}
 
 	if !b.body.Initialized() || !b.body.HasRevocation() {
@@ -60,9 +70,16 @@ func (b *BearerToken) Sign(privkey interface{}) error {
 // then verify the signature for the authenticity of the body.
 // if all passed, check with the revoker that the revocation ID from the body isn't
 // revoked.
-func (b *BearerToken) Verify(pubkey interface{}) error {
-	if _, ok := pubkey.(ed25519.PublicKey); !ok {
-		return ErrBearerKeyTypeUnmatch
+// factor could be either a seed string or an ed25519.PublicKey
+func (b *BearerToken) Verify(factor interface{}) error {
+	var pubkey ed25519.PublicKey
+
+	if seed, ok := factor.(string); ok {
+		pubkey = harpocrates.Ed25519Key(seed).Public().(ed25519.PublicKey)
+	} else if pkey, ok := factor.(ed25519.PublicKey); ok { // either ed25519.PublicKey or crypto.PublicKey
+		pubkey = pkey
+	} else {
+		return ErrBearerBadVerifyingKey
 	}
 
 	if !b.body.Initialized() || !b.body.HasRevocation() {

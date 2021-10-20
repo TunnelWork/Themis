@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	harpocrates "github.com/TunnelWork/Harpocrates"
 	themis "github.com/TunnelWork/Themis"
 )
 
@@ -17,7 +18,7 @@ func TestBearerTokenMainFuncs(t *testing.T) {
 	var uip net.IP = net.ParseIP("127.0.0.1")
 	var orev themis.Revoker = themis.NewOfflineRevoker()
 	// var dummyKeySeed []byte = []byte("GAUKAS  GAUKAS  GAUKAS  GAUKAS  ")
-	// var dummyPrivKey ed25519.PrivateKey = ed25519.NewKeyFromSeed(dummyKeySeed)
+	// var dummyPrivKey ed25519.PrivateKey = harpocrates.Ed25519Key(dummyKeySeed)
 	// var dummyPubKey crypto.PublicKey = dummyPrivKey.Public()
 
 	bt, err := themis.GetNewBearerToken(uid, uip, time.Hour, orev)
@@ -47,8 +48,8 @@ func TestBearerTokenInterfaceFuncs(t *testing.T) {
 	var uid uint32 = 0xCAFE
 	var uip net.IP = net.ParseIP("127.0.0.1")
 	var orev themis.Revoker = themis.NewOfflineRevoker()
-	var dummyKeySeed []byte = []byte("GAUKAS  GAUKAS  GAUKAS  GAUKAS  ")
-	var dummyPrivKey ed25519.PrivateKey = ed25519.NewKeyFromSeed(dummyKeySeed)
+	var dummyKeySeed string = "GAUKAS  "
+	var dummyPrivKey ed25519.PrivateKey = harpocrates.Ed25519Key(dummyKeySeed)
 	var dummyPubKey crypto.PublicKey = dummyPrivKey.Public()
 
 	bt, err := themis.GetNewBearerToken(uid, uip, time.Hour, orev)
@@ -64,6 +65,11 @@ func TestBearerTokenInterfaceFuncs(t *testing.T) {
 	errVerify := bt.Verify(dummyPubKey)
 	if errVerify != nil {
 		t.Errorf("Can't Verify(), error: %s", errVerify)
+	}
+
+	errVerify2 := bt.Verify(dummyKeySeed)
+	if errVerify2 != nil {
+		t.Errorf("Can't Verify() with the seed, error: %s", errVerify)
 	}
 
 	bt.SetFullToken()
