@@ -85,7 +85,7 @@ func (orev *OfflineRevoker) Register(uid uint32, params ...interface{}) (uint32,
 	return rid, nil
 }
 
-func (orev *OfflineRevoker) Validate(uid uint32, id uint32) error {
+func (orev *OfflineRevoker) Validate(uid, id uint32) error {
 	orev.sgl.Lock()
 	defer orev.sgl.Unlock()
 	if umap, exist := orev.registry[uid]; exist {
@@ -101,7 +101,7 @@ func (orev *OfflineRevoker) Validate(uid uint32, id uint32) error {
 	return ErrBadRevocationID
 }
 
-func (orev *OfflineRevoker) Revoke(uid uint32, id uint32) error {
+func (orev *OfflineRevoker) Revoke(uid, id uint32) error {
 	orev.sgl.Lock()
 	defer orev.sgl.Unlock()
 	if umap, exist := orev.registry[uid]; exist {
