@@ -1,5 +1,7 @@
 package themis
 
+// AuthBody.go provides a relatively simple design for the major informative part of an auth token which includes important authentication info.
+
 import (
 	"errors"
 	"fmt"
@@ -12,8 +14,7 @@ import (
 )
 
 const (
-	sepIdentityIpAddr string = "@"
-	sepIpExpiry       string = "~"
+	sepAuthFactor string = "~"
 )
 
 var (
@@ -23,70 +24,86 @@ var (
 )
 
 type AuthBody struct {
-	identity     uint
-	ipAddr       net.IP
-	expiry       time.Time
-	revocationID revocationID
+	Identity     uint32
+	IpAddr       net.IP
+	Expiry       time.Time
+	RevocationID uint32
 }
 
-func NewAuthBody(authedIdentity uint, authedIP net.IP, validFor time.Duration) AuthBody {
+func NewAuthBody(authedIdentity uint32, authedIP net.IP, revID uint32, validFor time.Duration) AuthBody {
 	return AuthBody{
-		identity:     authedIdentity,
-		ipAddr:       authedIP,
-		expiry:       time.Now().Add(validFor),
-		revocationID: NewRevocationID(authedIdentity),
+		Identity:     authedIdentity,
+		IpAddr:       authedIP,
+		RevocationID: revID,
+		Expiry:       time.Now().Add(validFor),
 	}
 }
 
 func AuthBodyFromBase64(b64token string) (AuthBody, error) {
 	var ab = AuthBody{}
-	var tokenIdentity uint
+	var err error
+	var tokenIdentity uint32
 	var tokenIpAddr net.IP
 	var tokenExpiry time.Time
+	var tokenRevocationID uint32
 
 	decodeToken := hc.Base64Decoding(b64token)
 	if decodeToken == "" {
 		return ab, ErrBadBase64Token
 	}
 
-	// Parse expiry
-	expirySplit := strings.Split(decodeToken, sepIpExpiry)
-	if len(expirySplit) != 2 {
+	// Split & Parse
+	authBodySplit := strings.Split(decodeToken, sepAuthFactor)
+	if len(authBodySplit) != 4 { // If not 4 parts, token is incomplete
 		return ab, ErrIllformedBody
 	}
-	tokenExpiry, err := time.Parse("2006-01-02T15:04:05", expirySplit[1])
+
+	// Parse identity
+	tokenIdentity64, err := strconv.ParseUint(authBodySplit[0], 16, 32) // base: 16, size: 32-bit
 	if err != nil {
 		return ab, err
 	}
+	tokenIdentity = uint32(tokenIdentity64)
 
 	// Parse ipAddr
-	ipSplit := strings.Split(expirySplit[0], sepIdentityIpAddr)
-	if len(ipSplit) != 2 {
-		return ab, ErrIllformedBody
-	}
-	tokenIpAddr = net.ParseIP(ipSplit[1])
+	tokenIpAddr = net.ParseIP(authBodySplit[1])
 	if tokenIpAddr == nil {
 		return ab, ErrBadIpAddr
 	}
 
-	// Parse identity
-	tokenIdentity64, err := strconv.ParseUint(ipSplit[0], 16, 32) // base: 16, size: 32-bit
+	// Parse revocationID
+	if len(authBodySplit[2]) > 0 {
+		tokenRevocationID64, err := strconv.ParseUint(authBodySplit[2], 16, 32) // base: 16, size: 32-bit
+		if err != nil {
+			return ab, err
+		}
+		tokenRevocationID = uint32(tokenRevocationID64)
+	}
+
+	// Parse expiry
+	tokenExpiry, err = time.Parse("2006-01-02T15:04:05", authBodySplit[3])
 	if err != nil {
 		return ab, err
 	}
-	tokenIdentity = uint(tokenIdentity64)
 
-	ab.identity = tokenIdentity
-	ab.ipAddr = tokenIpAddr
-	ab.expiry = tokenExpiry
+	// Parse identity
+
+	ab.Identity = tokenIdentity
+	ab.IpAddr = tokenIpAddr
+	ab.RevocationID = tokenRevocationID
+	ab.Expiry = tokenExpiry
 
 	return ab, nil
 }
 
 func (ab *AuthBody) Base64() string {
-	return hc.Base64Encoding(fmt.Sprintf("%0.8x%s%s%s%s", ab.identity, sepIdentityIpAddr, ab.ipAddr, sepIpExpiry, ab.expiry.UTC().Format("2006-01-02T15:04:05")))
+	return hc.Base64Encoding(fmt.Sprintf("%0.8x%s%s%s%0.8x%s%s", ab.Identity, sepAuthFactor, ab.IpAddr, sepAuthFactor, ab.RevocationID, sepAuthFactor, ab.Expiry.UTC().Format("2006-01-02T15:04:05")))
 }
 
 func (ab *AuthBody) Initialized() bool {
-	return ab.identity != 0 && ab.ipAddr != nil && !ab.expiry.IsZero() // All three factors must be set.
+	return ab.Identity != 0 && ab.IpAddr != nil && !ab.Expiry.IsZero() // All three factors must be set.
+}
+
+func (ab *AuthBody) HasRevocation() bool {
+	return ab.RevocationID != 0
 }
