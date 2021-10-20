@@ -41,7 +41,7 @@ func NewOfflineRevoker() *OfflineRevoker {
 	}
 }
 
-func (orev *OfflineRevoker) Register(uid uint32, params ...interface{}) (uint32, error) { // skipcq: GSC-G404
+func (orev *OfflineRevoker) Register(uid uint32, params ...interface{}) (uint32, error) {
 	orev.sgl.Lock()
 	defer orev.sgl.Unlock()
 	var rid uint32
@@ -64,7 +64,7 @@ func (orev *OfflineRevoker) Register(uid uint32, params ...interface{}) (uint32,
 		return 0, ErrOfflineRevokerNotEnoughParams
 	}
 
-	rid = rand.Uint32()
+	rid = rand.Uint32() // skipcq: GSC-G404
 
 	// Check if user's map exists
 	if umap, exist := orev.registry[uid]; exist {
