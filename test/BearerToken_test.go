@@ -14,7 +14,7 @@ import (
 // TestBearerTokenMainFuncs() evaluates if the most
 // important functions work for BearerToken implementation
 func TestBearerTokenMainFuncs(t *testing.T) {
-	var uid uint32 = 0xCAFE
+	var uid uint64 = 0xCAFE
 	var uip net.IP = net.ParseIP("127.0.0.1")
 	var orev themis.Revoker = themis.NewOfflineRevoker()
 	// var dummyKeySeed []byte = []byte("GAUKAS  GAUKAS  GAUKAS  GAUKAS  ")
@@ -45,7 +45,7 @@ func TestBearerTokenMainFuncs(t *testing.T) {
 // TestBearerTokenInterfaceFuncs() evaluates how well
 // BearerToken implements an AuthTokenRevocable
 func TestBearerTokenInterfaceFuncs(t *testing.T) {
-	var uid uint32 = 0xCAFE
+	var uid uint64 = 0xCAFE
 	var uip net.IP = net.ParseIP("127.0.0.1")
 	var orev themis.Revoker = themis.NewOfflineRevoker()
 	var dummyKeySeed string = "GAUKAS  "

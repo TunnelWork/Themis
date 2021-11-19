@@ -104,6 +104,10 @@ func (b *BearerToken) Verify(factor interface{}) error {
 	return b.revoker.Validate(b.body.Identity, b.body.RevocationID)
 }
 
+func (b *BearerToken) Body() AuthBody {
+	return b.body
+}
+
 // Renew() only updates the body. sig/fullToken must be manually updated by
 // calling corresponding functions.
 func (b *BearerToken) Renew(validFor time.Duration) error {
@@ -129,7 +133,7 @@ func (b *BearerToken) Revoke() error {
 
 // GetNewBearerToken() returns an UNSIGNED *BearerToken
 // rv needs to be not nil.
-func GetNewBearerToken(uid uint32, uip net.IP, validFor time.Duration, rv Revoker) (*BearerToken, error) {
+func GetNewBearerToken(uid uint64, uip net.IP, validFor time.Duration, rv Revoker) (*BearerToken, error) {
 	rid, err := rv.Register(uid, uip)
 	if err != nil {
 		return nil, err

@@ -21,7 +21,7 @@ type OfflineRevocationRecord struct {
 	LastActive   time.Time // Last time it calls Validate()
 }
 
-type RevocationRecordMap map[uint32]OfflineRevocationRecord
+type RevocationRecordMap map[uint64]OfflineRevocationRecord
 
 type ConcurrentRRMap struct {
 	lock  *sync.Mutex
@@ -31,20 +31,20 @@ type ConcurrentRRMap struct {
 // A *OfflineRevoker shall implement Revoker interface
 type OfflineRevoker struct {
 	sgl      *sync.Mutex
-	registry map[uint32]ConcurrentRRMap // map[userID](map[revocationID])
+	registry map[uint64]ConcurrentRRMap // map[userID](map[revocationID])
 }
 
 func NewOfflineRevoker() *OfflineRevoker {
 	return &OfflineRevoker{
 		sgl:      &sync.Mutex{},
-		registry: map[uint32]ConcurrentRRMap{},
+		registry: map[uint64]ConcurrentRRMap{},
 	}
 }
 
-func (orev *OfflineRevoker) Register(uid uint32, params ...interface{}) (uint32, error) {
+func (orev *OfflineRevoker) Register(uid uint64, params ...interface{}) (uint64, error) {
 	orev.sgl.Lock()
 	defer orev.sgl.Unlock()
-	var rid uint32
+	var rid uint64
 	var createdAt time.Time = time.Now()
 	orr := OfflineRevocationRecord{
 		Creator:      nil,
@@ -64,7 +64,7 @@ func (orev *OfflineRevoker) Register(uid uint32, params ...interface{}) (uint32,
 		return 0, ErrOfflineRevokerNotEnoughParams
 	}
 
-	rid = rand.Uint32() // skipcq: GSC-G404
+	rid = rand.Uint64() // skipcq: GSC-G404
 
 	// Check if user's map exists
 	if umap, exist := orev.registry[uid]; exist {
@@ -85,7 +85,7 @@ func (orev *OfflineRevoker) Register(uid uint32, params ...interface{}) (uint32,
 	return rid, nil
 }
 
-func (orev *OfflineRevoker) Validate(uid, id uint32) error {
+func (orev *OfflineRevoker) Validate(uid, id uint64) error {
 	orev.sgl.Lock()
 	defer orev.sgl.Unlock()
 	if umap, exist := orev.registry[uid]; exist {
@@ -101,7 +101,7 @@ func (orev *OfflineRevoker) Validate(uid, id uint32) error {
 	return ErrBadRevocationID
 }
 
-func (orev *OfflineRevoker) Revoke(uid, id uint32) error {
+func (orev *OfflineRevoker) Revoke(uid, id uint64) error {
 	orev.sgl.Lock()
 	defer orev.sgl.Unlock()
 	if umap, exist := orev.registry[uid]; exist {

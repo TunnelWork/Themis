@@ -81,17 +81,17 @@ func TestAuthBodyInitializationCheck(t *testing.T) {
 	auth1 := themis.AuthBody{
 		Identity:     0xCAFEFEED,
 		IpAddr:       net.ParseIP("192.168.0.1"),
-		RevocationID: uint32(100),
+		RevocationID: uint64(100),
 		Expiry:       time.Now(),
 	}
 	auth2 := themis.AuthBody{
 		IpAddr:       net.ParseIP("192.168.0.1"),
-		RevocationID: uint32(100),
+		RevocationID: uint64(100),
 		Expiry:       time.Now(),
 	}
 	auth3 := themis.AuthBody{
 		Identity:     0xCAFEFEED,
-		RevocationID: uint32(100),
+		RevocationID: uint64(100),
 		Expiry:       time.Now(),
 	}
 	auth4 := themis.AuthBody{
@@ -102,7 +102,7 @@ func TestAuthBodyInitializationCheck(t *testing.T) {
 	auth5 := themis.AuthBody{
 		Identity:     0xCAFEFEED,
 		IpAddr:       net.ParseIP("192.168.0.1"),
-		RevocationID: uint32(100),
+		RevocationID: uint64(100),
 	}
 
 	if !auth1.Initialized() {
