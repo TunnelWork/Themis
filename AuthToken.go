@@ -10,6 +10,8 @@ type AuthToken interface {
 
 	// Verify() checks for te signature's validity
 	Verify(factor interface{}) error
+
+	Body() AuthBody
 }
 
 // AuthTokenRenewable is an AuthToken

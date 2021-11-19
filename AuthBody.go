@@ -24,13 +24,13 @@ var (
 )
 
 type AuthBody struct {
-	Identity     uint32
+	Identity     uint64
 	IpAddr       net.IP
 	Expiry       time.Time
-	RevocationID uint32
+	RevocationID uint64
 }
 
-func NewAuthBody(authedIdentity uint32, authedIP net.IP, revID uint32, validFor time.Duration) AuthBody {
+func NewAuthBody(authedIdentity uint64, authedIP net.IP, revID uint64, validFor time.Duration) AuthBody {
 	return AuthBody{
 		Identity:     authedIdentity,
 		IpAddr:       authedIP,
@@ -42,10 +42,10 @@ func NewAuthBody(authedIdentity uint32, authedIP net.IP, revID uint32, validFor 
 func AuthBodyFromBase64(b64token string) (AuthBody, error) {
 	var ab = AuthBody{}
 	var err error
-	var tokenIdentity uint32
+	var tokenIdentity uint64
 	var tokenIpAddr net.IP
 	var tokenExpiry time.Time
-	var tokenRevocationID uint32
+	var tokenRevocationID uint64
 
 	decodeToken := hc.Base64Decoding(b64token)
 	if decodeToken == "" {
@@ -59,11 +59,10 @@ func AuthBodyFromBase64(b64token string) (AuthBody, error) {
 	}
 
 	// Parse identity
-	tokenIdentity64, err := strconv.ParseUint(authBodySplit[0], 16, 32) // base: 16, size: 32-bit
+	tokenIdentity, err = strconv.ParseUint(authBodySplit[0], 16, 32) // base: 16, size: 32-bit
 	if err != nil {
 		return ab, err
 	}
-	tokenIdentity = uint32(tokenIdentity64)
 
 	// Parse ipAddr
 	tokenIpAddr = net.ParseIP(authBodySplit[1])
@@ -73,11 +72,10 @@ func AuthBodyFromBase64(b64token string) (AuthBody, error) {
 
 	// Parse revocationID
 	if len(authBodySplit[2]) > 0 {
-		tokenRevocationID64, err := strconv.ParseUint(authBodySplit[2], 16, 32) // base: 16, size: 32-bit
+		tokenRevocationID, err = strconv.ParseUint(authBodySplit[2], 16, 32) // base: 16, size: 32-bit
 		if err != nil {
 			return ab, err
 		}
-		tokenRevocationID = uint32(tokenRevocationID64)
 	}
 
 	// Parse expiry
